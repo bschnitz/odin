@@ -6,4 +6,4 @@ Rashly implemented linked list for ruby. No real tests were implemented, so ther
 
 ## Invocation of example code
 
-Run `ruby linke_list.rb`
+Run `ruby linked_list.rb`
