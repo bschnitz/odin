@@ -10,11 +10,12 @@ end
 class Node
   include Comparable
 
-  attr_accessor :left, :right, :data, :height
+  attr_accessor :left, :right, :parent, :data
 
-  def initialize(data)
+  def initialize(data, parent)
     @left = nil
     @right = nil
+    @parent = parent
     @data = data
   end
 
@@ -45,6 +46,44 @@ class Node
 
     [left&.height || 0, right&.height || 0].max + 1
   end
+
+  def replace_child(child, replacement)
+    @left = replacement if @left == child
+    @right = replacement if @right == child
+    replacement.parent = self
+  end
+
+  def rotate_left
+    return unless @right
+
+    # root has no parent, thus the use of &.
+    @parent&.replace_child(self, @right)
+
+    @parent = @right
+
+    temp = @right.left
+
+    @right.left = self
+
+    @right = temp
+    temp&.parent = self
+  end
+
+  def rotate_right
+    return unless @left
+
+    # root has no parent, thus the use of &.
+    @parent&.replace_child(self, @left)
+
+    @parent = @left
+
+    temp = @left.right
+
+    @left.right = self
+
+    @left = temp
+    temp&.parent = self
+  end
 end
 
 # A binary search tree
@@ -57,15 +96,15 @@ class Tree
     build_tree_from_normalized_array(array.sort.uniq)
   end
 
-  def build_tree_from_normalized_array(array)
+  def build_tree_from_normalized_array(array, parent = nil)
     return nil if array.empty?
 
     middle = array.size >> 1
-    root = Node.new(array[middle])
-    root.left = build_tree_from_normalized_array(array[0...middle])
-    root.right = build_tree_from_normalized_array(array[middle + 1..-1])
+    node = Node.new(array[middle], parent)
+    node.left = build_tree_from_normalized_array(array[0...middle], node)
+    node.right = build_tree_from_normalized_array(array[middle + 1..-1], node)
 
-    root
+    node
   end
 
   def depth_first_enumerator(node)
@@ -82,6 +121,27 @@ class Tree
     end
   end
 
+  def rotate_left(node)
+    node.rotate_left
+    # if root was rotated, it is no longer root, correct this!
+    @root = @root.parent if @root == node
+  end
+
+  def rotate_right(node)
+    node.rotate_right
+    # if root was rotated, it is no longer root, correct this!
+    @root = @root.parent if @root == node
+  end
+
+  def test_rotate_left
+    rotate_left(@root)
+  end
+
+  def test_rotate_right
+    rotate_right(@root)
+  end
+
+  # only works correltly if tree is balanced
   def to_as(node = @root, pad = nil, position = :middle, trh = @root.height)
     pad ||= max_output_length(node)
 
@@ -130,4 +190,10 @@ end
 #puts Tree.new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).to_as
 #
 tree = Tree.new([1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324])
+puts tree.to_as
+tree.test_rotate_left
+puts tree.to_as
+tree.test_rotate_right
+puts tree.to_as
+tree.test_rotate_right
 puts tree.to_as
