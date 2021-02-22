@@ -10,13 +10,15 @@ end
 class Node
   include Comparable
 
-  attr_accessor :left, :right, :parent, :data
+  attr_accessor :data, :parent
+  attr_reader :left, :right, :height
 
   def initialize(data, parent)
     @left = nil
     @right = nil
     @parent = parent
     @data = data
+    @height = 0
   end
 
   def <=>(other)
@@ -27,6 +29,7 @@ class Node
     pad_left = position == :left ? '─' : ' '
     pad_right = position == :right ? '─' : ' '
     center(@data.to_s, pad, pad_left, pad_right)
+    #center(@height.to_s, pad, pad_left, pad_right)
   end
 
   def child_join_str
@@ -41,16 +44,29 @@ class Node
     end
   end
 
-  def height
-    return 0 unless left || right
+  def recalculate_height
+    @height = [left&.height || 0, right&.height || 0].max + 1
+    @parent&.recalculate_height
+  end
 
-    [left&.height || 0, right&.height || 0].max + 1
+  def left=(node)
+    @left = node
+    @height = [left&.height || 0, right&.height || 0].max + 1
+    node&.parent = self
+  end
+
+  def right=(node)
+    @right = node
+    @height = [left&.height || 0, right&.height || 0].max + 1
+    node&.parent = self
   end
 
   def replace_child(child, replacement)
-    @left = replacement if @left == child
-    @right = replacement if @right == child
-    replacement.parent = self
+    if @left == child
+      self.left = replacement
+    elsif @right == child
+      self.right = replacement
+    end
   end
 
   def rotate_left
@@ -58,15 +74,13 @@ class Node
 
     # root has no parent, thus the use of &.
     @parent&.replace_child(self, @right)
-
-    @parent = @right
+    @right.parent = @parent
 
     temp = @right.left
-
     @right.left = self
+    self.right = temp
 
-    @right = temp
-    temp&.parent = self
+    @parent.recalculate_height
   end
 
   def rotate_right
@@ -74,15 +88,13 @@ class Node
 
     # root has no parent, thus the use of &.
     @parent&.replace_child(self, @left)
-
-    @parent = @left
+    @left.parent = @parent
 
     temp = @left.right
-
     @left.right = self
+    self.left = temp
 
-    @left = temp
-    temp&.parent = self
+    @parent.recalculate_height
   end
 end
 
@@ -157,29 +169,6 @@ class Tree
 
     [node.to_s(joined[0].length, position)] + joined
   end
-
-  #def level_enumerator(root = @root)
-  #  Enumerator.new do |out|
-  #    current_level = [root]
-  #    next_level = []
-  #    while current_level.any?
-  #      out << current_level
-  #      current_level.each do |node|
-  #        next_level.push(node.left, node.right) unless node.nil?
-  #      end
-  #      current_level = next_level
-  #      next_level = []
-  #    end
-  #  end
-  #end
-
-  #def breadth_first_enumerator
-  #  Enumerator.new do |out|
-  #    level_enumerator.each do |nodes|
-  #      nodes.each { |node| out << node }
-  #    end
-  #  end
-  #end
 end
 
 #puts Tree.new([
