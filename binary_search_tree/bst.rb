@@ -29,7 +29,6 @@ class Node
     pad_left = position == :left ? '─' : ' '
     pad_right = position == :right ? '─' : ' '
     center(@data.to_s, pad, pad_left, pad_right)
-    #center(@height.to_s, pad, pad_left, pad_right)
   end
 
   def child_join_str
