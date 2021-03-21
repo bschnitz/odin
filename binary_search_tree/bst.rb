@@ -69,7 +69,7 @@ class Node
   end
 
   def rotate_left
-    return unless @right
+    return self unless @right
 
     # root has no parent, thus the use of &.
     @parent&.replace_child(self, @right)
@@ -80,10 +80,11 @@ class Node
     self.right = temp
 
     @parent.recalculate_height
+    @parent # return the node, which replaced self by rotation
   end
 
   def rotate_right
-    return unless @left
+    return self unless @left
 
     # root has no parent, thus the use of &.
     @parent&.replace_child(self, @left)
@@ -94,6 +95,50 @@ class Node
     self.left = temp
 
     @parent.recalculate_height
+    @parent # return the node, which replaced self by rotation
+  end
+
+  def rotate_left_right
+
+  end
+
+  def heavyness
+    @left.height - @right.heigth
+  end
+
+  def next_double_heavy_parent
+    parent = @parent
+    until parent.nil?
+      return parent if parent.heavyness > 1
+
+      parent = parent.parent
+    end
+    nil
+  end
+
+  def fix_double_heavyness
+    case heavyness
+    when 0..1 then self # no double hevyness to fix
+    when 2    then fix_double_left_heavyness
+    when -2   then fix_double_right_heavyness
+    else "Fixing a heavyness of #{heavyness} is not implemented."
+    end
+  end
+
+  def fix_double_left_heavyness
+    case @left.heavyness
+    when -1   then rotate_left_right # zig-zag-case
+    when 0..1 then rotate_right
+    else 'Node cannot be double leaft heavy.'
+    end
+  end
+
+  def fix_double_right_heavyness
+    case @right.heavyness
+    when 1     then rotate_right_left # zig-zag-case
+    when -1..0 then rotate_left
+    else 'Node cannot be double leaft heavy.'
+    end
   end
 end
 
