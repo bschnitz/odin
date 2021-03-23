@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # node in a binary search tree
 class Node
   include Comparable
@@ -241,123 +243,15 @@ class Node
     [@left&.height || 0, @right&.height || 0].max + 1
   end
 
+  # @return [Boolean|Integer] false if not balanced, the height otherwise
   def balanced?
-    
+    return 0 if no_childs?
+
+    height_l = @left.nil?  ? 0 : @left.balanced?
+    height_r = @right.nil? ? 0 : @right.balanced?
+
+    return false unless height_l && height_r
+
+    (height_l - height_r).abs < 2 && ([height_l, height_r].max + 1)
   end
 end
-
-# binary search tree
-class Tree
-  # @param values [Array]
-  def initialize(values)
-    @root = build_tree(values.sort.uniq)
-  end
-
-  # @param values [Array] must be sorted and have no duplicates
-  # @param left [Integer] index of leftmost value to be inserted
-  # @param right [Integer] index of rightmost value to be inserted
-  #
-  # @return [Node] the root of the new tree
-  def build_tree(values, left = 0, right = values.length - 1)
-    return nil if right <= left
-
-    values = values.sort.uniq
-
-    mid = left + (right - left) / 2
-    root = Node.new(values[mid])
-    root.insert(build_tree(values, left, mid - 1))
-    root.insert(build_tree(values, mid + 1, right))
-
-    root
-  end
-
-  def insert(value)
-    @root.insert(Node.new(value))
-  end
-
-  def delete(value)
-    node = Node.new(value)
-    @root = nil if !@root.delete(node) && node == @root
-  end
-
-  def find(value)
-    @root.find_inverse_path(Node.new(value)).first
-  end
-
-  def print
-    return if @root.nil?
-
-    @root.flatten_tree.each do |level|
-      puts level
-    end
-  end
-
-  def inorder
-    @root.inorder.map(&:data)
-  end
-
-  def preorder
-    @root.preorder.map(&:data)
-  end
-
-  def postorder
-    @root.postorder.map(&:data)
-  end
-
-  def level_order
-    @root.level_order.map(&:data)
-  end
-
-  def height
-    @root.height
-  end
-
-  def depth(value)
-    @root.find_inverse_path(Node.new(value)).to_a.length - 1
-  end
-end
-
-t = Tree.new([1, 9, 4, 5, 7, 34, 99, 101, 3, 55])
-t.insert(200)
-t.insert(300)
-t.insert(400)
-t.insert(500)
-t.insert(12)
-t.insert(1)
-t.insert(8)
-t.insert(11)
-t.insert(10)
-t.print
-
-puts 'Delete 500'
-t.delete(500)
-t.print
-puts 'Delete 300'
-t.delete(300)
-t.print
-puts 'Delete 9'
-t.delete(9)
-t.print
-puts 'Delete 55'
-t.delete(55)
-t.print
-puts 'Delete 55'
-t.delete(55)
-t.print
-puts 'Delete 7'
-t.delete(7)
-t.print
-
-puts 'Traversel inorder, preorder, postorder, level_order'
-p t.inorder
-p t.preorder
-p t.postorder
-p t.level_order
-
-puts 'Find 200'
-p t.find(200)
-
-puts 'Depth 200'
-p t.depth(200)
-
-puts "Height: #{t.height}"
