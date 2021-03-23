@@ -139,47 +139,46 @@ class Node
     array1.zip(array2)
   end
 
-  def merge_flattened(flat_left, flat_right, position)
-    return { width: to_s.length, levels: [to_s] } if no_childs?
-
-    flat_left  ||= { width: 0, levels: [''] }
-    flat_right ||= { width: 0, levels: [''] }
-
-    left_width = flat_left[:width]
-    right_width = flat_right[:width]
-
+  def merge_flattened_top(left, right, position)
     case position
     when :left
-      pad_left = ' '
-      pad_right = '━'
+      "#{' ' * left.length}#{self}#{'━' * right.length}"
     when :right
-      pad_left = '━'
-      pad_right = ' '
+      "#{'━' * left.length}#{self}#{' ' * right.length}"
     else
-      pad_left = ' '
-      pad_right = ' '
+      "#{' ' * left.length}#{self}#{' ' * right.length}"
     end
+  end
 
-    top = "#{pad_left * left_width}#{self}#{pad_right * right_width}"
+  def merge_flattened_child_level(left, right)
+    pad = '━' * (to_s.length - 1)
 
-    mid = if both_childs? then "┻#{'━' * (to_s.length - 1)}"
-          elsif @right    then "┗#{'━' * (to_s.length - 1)}"
-          elsif @left     then "#{'━' * (to_s.length - 1)}┛"
-          end
+    if both_childs? then "#{left}┻#{pad}#{right}"
+    elsif @right    then "#{left}┗#{pad}#{right}"
+    elsif @left     then "#{left}#{pad}┛#{right}"
+    end
+  end
 
-    levels = filled_zip(flat_left[:levels], flat_right[:levels])
-    level1 = levels.shift
-    level1 = "#{level1[0] || '' * left_width}#{mid}#{level1[1] || '' * right_width}"
-
+  def merge_flattened_sub_child_levels(levels)
     mid = ' ' * to_s.length
-    levels.map! do |lr|
-      "#{lr[0] || ' ' * left_width}#{mid}#{lr[1] || ' ' * right_width}"
+    left_pad, right_pad = levels.shift.map { |entry| ' ' * entry.length }
+    levels.map do |lr|
+      "#{lr[0] || left_pad}#{mid}#{lr[1] || right_pad}"
     end
+  end
 
-    {
-      width: top.length,
-      levels: levels.unshift(top, level1)
-    }
+  def merge_flattened(flat_left, flat_right, position)
+    return [to_s] if no_childs?
+
+    flat_left  ||= ['']
+    flat_right ||= ['']
+
+    top = merge_flattened_top(flat_left[0], flat_right[0], position)
+
+    levels = filled_zip(flat_left, flat_right)
+    level1 = merge_flattened_child_level(*(levels[0]))
+
+    merge_flattened_sub_child_levels(levels).unshift(top, level1)
   end
 
   def flatten_tree(position = nil)
@@ -288,8 +287,7 @@ class Tree
   def print
     return if @root.nil?
 
-    flattened = @root.flatten_tree
-    flattened[:levels].each do |level|
+    @root.flatten_tree.each do |level|
       puts level
     end
   end
