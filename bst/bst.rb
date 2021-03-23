@@ -44,7 +44,7 @@ class Node
         data = @left.data
         @left = nil
       else
-        data = @left.delete_smallest_decendent(self)
+        data = @left.delete_smallest_decendent
       end
     elsif @right
       data = @data
@@ -117,13 +117,13 @@ class Node
   # @param parent [Node|nil]
   # deletes node if it is a decendent from self or parent, if node == self and
   # parent is nil, node cannot be deleted
-  # @return [Boolean] true if node could be found and deleted, false els
+  # @return [Boolean] true if node could be found and deleted, false else
   def delete(node, parent = nil)
     return @right&.delete(node, self) if node > self
 
     return @left&.delete(node, self)  if node < self
 
-    replace_by_decendent || parent&.delete_child(self)
+    replace_by_decendent || parent&.delete_child(self) || false
   end
 
   def childs
@@ -189,6 +189,62 @@ class Node
       position
     )
   end
+
+  def find_inverse_path(node)
+    Enumerator.new do |yielder|
+      if node < self
+        @left&.find_inverse_path(node)&.each { |child| yielder << child }
+      elsif node > self
+        @right&.find_inverse_path(node)&.each { |child| yielder << child }
+      end
+      yielder << self
+    end
+  end
+
+  def inorder
+    Enumerator.new do |yielder|
+      @left&.inorder&.each { |node| yielder << node }
+      yielder << self
+      @right&.inorder&.each { |node| yielder << node }
+    end
+  end
+
+  def postorder
+    Enumerator.new do |yielder|
+      @left&.postorder&.each { |node| yielder << node }
+      @right&.postorder&.each { |node| yielder << node }
+      yielder << self
+    end
+  end
+
+  def preorder
+    Enumerator.new do |yielder|
+      yielder << self
+      @left&.preorder&.each { |node| yielder << node }
+      @right&.preorder&.each { |node| yielder << node }
+    end
+  end
+
+  def level_order(level = [self])
+    Enumerator.new do |yielder|
+      level = level.each_with_object([]) do |node, new_level|
+        yielder << node
+        new_level.push(node.left) if node.left
+        new_level.push(node.right) if node.right
+      end
+      level_order(level).each { |node| yielder << node } unless level.empty?
+    end
+  end
+
+  def height
+    return 0 if no_childs?
+
+    [@left&.height || 0, @right&.height || 0].max + 1
+  end
+
+  def balanced?
+    
+  end
 end
 
 # binary search tree
@@ -225,11 +281,41 @@ class Tree
     @root = nil if !@root.delete(node) && node == @root
   end
 
+  def find(value)
+    @root.find_inverse_path(Node.new(value)).first
+  end
+
   def print
+    return if @root.nil?
+
     flattened = @root.flatten_tree
     flattened[:levels].each do |level|
       puts level
     end
+  end
+
+  def inorder
+    @root.inorder.map(&:data)
+  end
+
+  def preorder
+    @root.preorder.map(&:data)
+  end
+
+  def postorder
+    @root.postorder.map(&:data)
+  end
+
+  def level_order
+    @root.level_order.map(&:data)
+  end
+
+  def height
+    @root.height
+  end
+
+  def depth(value)
+    @root.find_inverse_path(Node.new(value)).to_a.length - 1
   end
 end
 
@@ -257,3 +343,23 @@ t.print
 puts 'Delete 55'
 t.delete(55)
 t.print
+puts 'Delete 55'
+t.delete(55)
+t.print
+puts 'Delete 7'
+t.delete(7)
+t.print
+
+puts 'Traversel inorder, preorder, postorder, level_order'
+p t.inorder
+p t.preorder
+p t.postorder
+p t.level_order
+
+puts 'Find 200'
+p t.find(200)
+
+puts 'Depth 200'
+p t.depth(200)
+
+puts "Height: #{t.height}"
