@@ -38,43 +38,92 @@ class Node
     @left.nil? && @right.nil?
   end
 
-  def delete_largest_leaf
-    return @right.delete_largest_leaf(self) if @right&.right
+  def delete_smallest_decendent
+    if @left
+      if @left.no_childs?
+        data = @left.data
+        @left = nil
+      else
+        data = @left.delete_smallest_decendent(self)
+      end
+    elsif @right
+      data = @data
+      replace_by_right
+    end
 
-    leaf = @right
-    @right = nil
-    leaf
+    data
   end
 
-  # searches a child with a replacement value for this node. the value is
-  # replaced by the childs value and the child is deleted from the tree
+  def replace_by_node(node)
+    @data = node.data
+    @left = node.left
+    @right = node.right
+  end
+
+  def replace_by_left
+    return false if @left.nil?
+
+    if @left.no_childs?
+      @data = @left.data
+      @left = nil
+      true
+    elsif @right.nil?
+      replace_by_node(@left)
+      true
+    else false end
+  end
+
+  def replace_by_right
+    return false if @right.nil?
+
+    if @right.no_childs?
+      @data = @right.data
+      @right = nil
+      true
+    elsif @left.nil?
+      replace_by_node(@right)
+      true
+    else false end
+  end
+
+  # searches a decendent which can replace this node. the value from the
+  # replacement is copied into this node and the decendent is deleted
   # @return false if no child for replacement exists, true else
-  def replace_by_child
+  def replace_by_decendent
     return false unless any_child?
 
-    if both_childs?
-      @data = delete_largest_leaf.data
-    else
-      child = @right || @left
-      @data = child.data
-      @left = child.left
-      @right = child.right
-    end
+    return true if replace_by_right || replace_by_left
+
+    @data = @right.delete_smallest_decendent
 
     true
   end
 
+  # deletes child, if it is a child of self
+  # @return [Boolean] false if child is not a child of self, else true
+  def delete_child(child)
+    if @left == child
+      @left = nil
+      true
+    elsif @right == child
+      @right = nil
+      true
+    end
+
+    false
+  end
+
   # @param node [Node]
-  # @param parent [Node]
-  def delete(node, parent)
+  # @param parent [Node|nil]
+  # deletes node if it is a decendent from self or parent, if node == self and
+  # parent is nil, node cannot be deleted
+  # @return [Boolean] true if node could be found and deleted, false els
+  def delete(node, parent = nil)
     return @right&.delete(node, self) if node > self
 
     return @left&.delete(node, self)  if node < self
 
-    return if replace_by_child
-
-    parent.left == node && parent.left = nil
-    parent.rigth == node && parent.right = nil
+    replace_by_decendent || parent&.delete_child(self)
   end
 
   def childs
@@ -173,11 +222,7 @@ class Tree
 
   def delete(value)
     node = Node.new(value)
-    if node == @root && !@root.replace_by_child
-      @root = nil
-    else
-      @root.delete(node)
-    end
+    @root = nil if !@root.delete(node) && node == @root
   end
 
   def print
@@ -188,7 +233,7 @@ class Tree
   end
 end
 
-t = Tree.new([1,9,4,5,7,34,99,101,3,55])
+t = Tree.new([1, 9, 4, 5, 7, 34, 99, 101, 3, 55])
 t.insert(200)
 t.insert(300)
 t.insert(400)
@@ -198,4 +243,17 @@ t.insert(1)
 t.insert(8)
 t.insert(11)
 t.insert(10)
+t.print
+
+puts 'Delete 500'
+t.delete(500)
+t.print
+puts 'Delete 300'
+t.delete(300)
+t.print
+puts 'Delete 9'
+t.delete(9)
+t.print
+puts 'Delete 55'
+t.delete(55)
 t.print
