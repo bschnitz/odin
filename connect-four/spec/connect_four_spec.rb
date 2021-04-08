@@ -62,14 +62,34 @@ describe ConnectFour do
   end
 
   describe '#user_input' do
-    xit 'returns nil, if user inputs "Q" or "q"' do
+    before do
+      allow(subject).to receive(:gets)
+    end
+
+    it 'returns nil, if user inputs "Q" or "q"' do
+      allow(subject).to receive(:puts).and_return('Q')
+      expect(subject.user_input).to be nil
+
+      allow(subject).to receive(:puts).and_return('q')
+      expect(subject.user_input).to be nil
     end
 
     # outgoing command: game.valid_input?
-    xit 'requests new input until input is valid' do
+    it 'checks that input is valid' do
+      allow(game).to receive(:valid_input?).and_return(false, false, true)
+      expect(subject).to receive(:valid_input?).exactly(3).times
+      subject.user_input
     end
 
-    xit 'returns the input when it is valid' do
+    it 'requests new input until input is valid' do
+      allow(game).to receive(:valid_input?).and_return(false, false, true)
+      expect(subject).to receive(:gets).exactly(3).times
+      subject.user_input
+    end
+
+    it 'returns the input when it is valid' do
+      allow(game).to receive(:valid_input?).and_return(0)
+      expect(subject).to be 0
     end
   end
 end
