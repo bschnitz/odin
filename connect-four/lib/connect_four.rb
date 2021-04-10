@@ -16,6 +16,7 @@ class ConnectFour
     @game_printer.print
 
     until @game.won? || @game.draw? || (move = user_input).nil?
+      puts
       @game.make_move(move)
       @game_printer.print
       @game.change_player
@@ -31,7 +32,7 @@ class ConnectFour
     loop do
       puts 'Please specify a column or enter "q"/"Q" to exit the game.'
       puts "Valid columns are #{@game.valid_columns}."
-      input = gets
+      input = gets.chop
 
       return if %w[q Q].include?(input)
       return input.to_i if @game.valid_column?(input)
