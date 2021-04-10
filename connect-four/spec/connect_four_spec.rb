@@ -59,11 +59,35 @@ describe ConnectFour do
       expect(board_printer).to receive(:print).exactly(2).times
       subject.game_loop
     end
+
+    it 'prints the symbol of the winner, if the game was won' do
+      winner_symbol = 'O'
+      allow(game).to receive(:won?).and_return(true)
+      allow(game).to receive(:winner?).and_return(winner_symbol)
+      expect(subject)
+        .to receive(:puts)
+        .with("Player #{winner_symbol} has won. Congratulations!")
+      subject.game_loop
+    end
+
+    it 'informs if the game was a draw' do
+      allow(game).to receive(:draw?).and_return(true)
+      expect(subject).to receive(:puts).with('No moves left, it is a draw.')
+      subject.game_loop
+    end
   end
 
   describe '#user_input' do
     before do
       allow(subject).to receive(:gets)
+    end
+
+    it 'prints the valid moves' do
+      allow(game).to receive(:valid_columns).and_return([3, 6, 7, 8, 10])
+      expect(subject)
+        .to receive(:puts)
+        .with("Valid columns are #{valid_columns}.")
+      subject.user_input
     end
 
     it 'returns nil, if user inputs "Q" or "q"' do
@@ -74,21 +98,21 @@ describe ConnectFour do
       expect(subject.user_input).to be nil
     end
 
-    # outgoing command: game.valid_input?
-    it 'checks that input is valid' do
-      allow(game).to receive(:valid_input?).and_return(false, false, true)
-      expect(subject).to receive(:valid_input?).exactly(3).times
+    # outgoing command: game.valid_column?
+    it 'checks that input is a valid move' do
+      allow(game).to receive(:valid_column?).and_return(false, false, true)
+      expect(subject).to receive(:valid_column?).exactly(3).times
       subject.user_input
     end
 
-    it 'requests new input until input is valid' do
-      allow(game).to receive(:valid_input?).and_return(false, false, true)
+    it 'requests new input until input it is a valid move' do
+      allow(game).to receive(:valid_column?).and_return(false, false, true)
       expect(subject).to receive(:gets).exactly(3).times
       subject.user_input
     end
 
-    it 'returns the input when it is valid' do
-      allow(game).to receive(:valid_input?).and_return(0)
+    it 'returns the input when it is a valid move' do
+      allow(game).to receive(:valid_column?).and_return(0)
       expect(subject).to be 0
     end
   end
